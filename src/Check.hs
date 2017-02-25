@@ -41,16 +41,11 @@ generateCheck description target = do
 
 
 solveCheck :: Check -> IO Check
-solveCheck (Check hash description target Open) = do
+solveCheck check@(Check _ _ target Open) = do
   solution <- Random.getStdRandom (Random.randomR (1,100))
 
   let newStatus = if solution <= target
                     then Passed solution
                     else Botched solution
 
-  return Check {
-    hash = hash,
-    description = description,
-    target = target,
-    status = newStatus
-  }
+  return check { status = newStatus }
