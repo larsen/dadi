@@ -1,0 +1,41 @@
+[% IF t %]
+<div class="row">
+  <div class="small-12 columns">
+    <h1>[% t.desc %]</h1>
+    <h4>Tiro per [% t.recipient %]</h4>
+    <h6><small>Created: [% t.created %]</small></h6>
+  </div>
+</div>
+<div class="row">
+  <div class="small-12 columns">
+	<div class="progress small-12 success round">
+	  <span class="label meter text-center" style="width: [% t.p %]%">[% t.p %]%</span>
+	</div>
+  </div>
+</div>
+  [% IF NOT t.thrown %]
+    <form method="POST">
+      <div class="row">
+        <div class="small-12 columns">
+          <button type="submit" class="button expand">Tira!</button>
+        </div>
+      </div>
+    </form>
+  [% ELSE %]
+      <div class="row">
+        <div class="small-12 columns">
+          [% IF t.result == 1 %]
+            <div data-alert class="alert-box success radius text-center">
+              Ci riesci! ([% t.dice_result %]/[% t.p %])
+            </div>
+          [% ELSE %]
+            <div data-alert class="alert-box alert radius text-center">
+              Non ci riesci! ([% t.dice_result %]/[% t.p %])
+            </div>
+          [% END %]
+        </div>
+      </div>
+  [% END %]
+[% ELSE %]
+  <h1>ID inesistente</h1>
+[% END %]
