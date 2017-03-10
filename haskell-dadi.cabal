@@ -17,15 +17,18 @@ library
   hs-source-dirs:      src
   exposed-modules:     Api
                      , Check
-  build-depends:       base >= 4.7 && < 5
-                     , uuid
-                     , containers
-                     , random
-                     , servant
+  build-depends:       acid-state
                      , aeson
+                     , base >= 4.7 && < 5
+                     , containers
+                     , mtl
+                     , random
+                     , safecopy
+                     , servant
                      , servant-server
                      , stm
                      , transformers
+                     , uuid
                      , wai-cors
                      , wai
   default-language:    Haskell2010
