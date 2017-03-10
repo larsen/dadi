@@ -68,6 +68,7 @@ solveCheck check@(Check _ _ target Open) solution =
   check { status = if solution <= target
                    then Passed solution
                    else Botched solution }
+solveCheck check _ = check
 
 pickSolution :: IO Int
 pickSolution = Random.getStdRandom (Random.randomR (1,100))
