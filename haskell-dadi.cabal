@@ -24,6 +24,7 @@ library
                      , servant
                      , aeson
                      , servant-server
+                     , stm
                      , transformers
                      , wai-cors
   default-language:    Haskell2010
