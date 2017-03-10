@@ -7,6 +7,7 @@ module Check
     , NewCheckInput(..)
     , generateCheck
     , solveCheck
+    , pickSolution
     ) where
 
 import qualified Data.Map.Strict as M
@@ -62,14 +63,16 @@ generateCheck description target = do
   }
 
 
+solveCheck :: Check -> Int -> Check
+solveCheck check@(Check _ _ target Open) solution =
+  check { status = if solution <= target
+                   then Passed solution
+                   else Botched solution }
 
+pickSolution :: IO Int
+pickSolution = Random.getStdRandom (Random.randomR (1,100))
 
-solveCheck :: Check -> IO Check
-solveCheck check@(Check _ _ target Open) = do
-  solution <- Random.getStdRandom (Random.randomR (1,100))
-
-  let newStatus = if solution <= target
-                    then Passed solution
-                    else Botched solution
-
-  return check { status = newStatus }
+solveCheckIO :: Check -> IO Check
+solveCheckIO check = do
+  solution <- pickSolution
+  return $ solveCheck check solution

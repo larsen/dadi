@@ -16,8 +16,10 @@ import Servant.API
 import Servant
 import Control.Monad.IO.Class (liftIO)
 import Control.Concurrent.STM
+import Control.Monad.Trans.Except
 import qualified Data.Map.Strict as M
 import qualified Data.UUID as UUID
+import Network.Wai
 import Network.Wai.Middleware.Cors
 
 
@@ -41,8 +43,8 @@ type DB = TVar Collection
 
 
 insertCheck :: DB -> Check -> STM ()
-insertCheck db check = do
-  modifyTVar' db $ M.insert (hash check) check
+insertCheck db c = do
+  modifyTVar' db $ M.insert (hash c) c
 
 newCheck :: DB -> Server PostCheckRoute
 newCheck db (NewCheckInput { .. }) =
@@ -53,32 +55,29 @@ newCheck db (NewCheckInput { .. }) =
     liftIO $ atomically $ insertCheck db c
     return c
 
-getCheckFromMap throw db hash =
-  let
-    succeed = \v -> liftIO $ atomically $ M.lookup v <$> readTVar db
-  in
-    maybe throw succeed $ UUID.fromString hash
 
 
+checkNotFound :: ExceptT ServantErr IO a
 checkNotFound = throwError err404 { errBody = "No Check found" }
 
 getCheck :: DB -> Server GetCheckRoute
 getCheck db hash =
-  getCheckFromMap checkNotFound db hash
+  let
+    succeed = \v -> liftIO $ atomically $ M.lookup v <$> readTVar db
+  in
+    maybe checkNotFound succeed $ UUID.fromString hash
 
 
 putCheck :: DB -> Server PutCheckRoute
 putCheck db hash_ = do
-  existing <- getCheckFromMap checkNotFound db hash_
-  case existing of
-    (Just check) -> do
-      solution <- liftIO $ solveCheck check
-      liftIO $ atomically $ modifyTVar' db $
-        M.updateWithKey (\ _ _ -> Just solution) (hash check)
-      return solution
-    Nothing -> checkNotFound
-
-
+  solution <- liftIO pickSolution
+  m <- liftIO $ atomically $ do
+    maybeCheck <- maybe (return Nothing) (\ k -> M.lookup k <$> readTVar db) $ UUID.fromString hash_
+    flip traverse maybeCheck $ \ c -> do
+        let c' = solveCheck c solution
+        modifyTVar' db $ M.updateWithKey (\ _ _ -> Just c') (hash c)
+        return c'
+  maybe checkNotFound return m
 
 listCheck :: DB -> Server ListChecksRoute
 listCheck db = do
@@ -97,8 +96,10 @@ apiServer db =
 userAPI :: Proxy DadiAPI
 userAPI = Proxy
 
+ourCors :: Middleware
 ourCors = cors $ const (Just resourcePolicy)
 
+resourcePolicy :: CorsResourcePolicy
 resourcePolicy =
     CorsResourcePolicy
         { corsOrigins = Nothing -- gives you /*
