@@ -6,6 +6,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE TypeFamilies #-}
 
 module Api
     (
@@ -43,68 +44,69 @@ type DadiAPI = PostCheckRoute
 
 
 data DB = DB { unDB :: Collection } deriving (Show, Typeable)
+type AcidDB = AcidState DB
 
--- $(deriveSafeCopy 0 'base ''DB)
+$(deriveSafeCopy 0 'base ''DB)
+$(deriveSafeCopy 0 'base ''Check)
+$(deriveSafeCopy 0 'base ''CheckState)
+$(deriveSafeCopy 0 'base ''UUID.UUID)
 
 insertCheck :: Check -> Update DB ()
 insertCheck c = modify $ (DB . M.insert (hash c) c . unDB)
 
 getCollection :: Query DB Collection
-getCollection = ask >>= unDB
+getCollection = unDB <$> ask
 
-solveCheckAcid :: Check -> Int -> Update DB (Maybe Check)
-solveCheckAcid c solution = do
+solveCheckAcid :: String -> Int -> Update DB (Maybe Check)
+solveCheckAcid hash_ solution = do
   DB m <- get
-  maybeCheck <- maybe (return Nothing) (\ k -> M.lookup k m) $ UUID.fromString hash_
+  maybeCheck <- maybe (return Nothing) (\ k -> return $ M.lookup k m) $ UUID.fromString hash_
   flip traverse maybeCheck $ \ c -> do
     let c' = solveCheck c solution
     modify $ DB . M.updateWithKey (\ _ _ -> Just c') (hash c) . unDB
     return c'
 
-$(makeAcidic ''DB ['insertCheck, 'getCollection])
+lookupUUID :: UUID.UUID -> Query DB (Maybe Check)
+lookupUUID k = ask >>= return . M.lookup k . unDB
+
+$(makeAcidic ''DB ['insertCheck, 'getCollection, 'solveCheckAcid, 'lookupUUID])
 
 newCheck :: AcidDB -> Server PostCheckRoute
-newCheck db (NewCheckInput { .. }) =
+newCheck acid (NewCheckInput { .. }) =
   if trg < 0 || trg > 100 then
     throwError err500 { errBody = "target must be between 0 and 100"}
   else do
     c <- liftIO $ generateCheck desc trg
-    liftIO $ update db $ insertCheck c
+    liftIO $ update acid $ InsertCheck c
     return c
-
-
 
 checkNotFound :: ExceptT ServantErr IO a
 checkNotFound = throwError err404 { errBody = "No Check found" }
 
 getCheck :: AcidDB -> Server GetCheckRoute
-getCheck db hash =
-  let
-    q :: UUID.UUID -> Query DB (Maybe Check)
-    q k = ask >>= return $ M.lookup v . unDB
-    succeed k = liftIO $ query db (q k)
-  in
-    maybe checkNotFound succeed $ UUID.fromString hash
+getCheck acid h =
+  maybe checkNotFound succeed $ UUID.fromString h where
+    succeed = liftIO . query acid . LookupUUID
 
 
-putCheck :: DB -> Server PutCheckRoute
-putCheck db hash_ = do
+putCheck :: AcidDB -> Server PutCheckRoute
+putCheck acid h = do
   solution <- liftIO pickSolution
-  m <- liftIO $ update db (solveCheckAcid hash_)
+  m <- liftIO $ update acid (SolveCheckAcid h solution)
   maybe checkNotFound return m
 
-listCheck :: DB -> Server ListChecksRoute
-listCheck db = do
-  m <- liftIO $ atomically $ readTVar db
+listCheck :: AcidDB -> Server ListChecksRoute
+listCheck acid = do
+  m <- liftIO $ query acid GetCollection
   return $ fmap snd $ M.toList m
 
 
-apiServer :: DB -> Server DadiAPI
-apiServer db =
-  newCheck db
-  :<|> getCheck db
-  :<|> putCheck db
-  :<|> listCheck db
+apiServer :: AcidDB -> Server DadiAPI
+apiServer acid =
+  newCheck acid
+  :<|> getCheck acid
+  :<|> putCheck acid
+  :<|> listCheck acid
 
 
 userAPI :: Proxy DadiAPI
@@ -128,5 +130,5 @@ resourcePolicy =
 
 server :: IO Application
 server = do
-  db <- openLocalState $ DB M.empty
-  return $ ourCors $ serve userAPI $ apiServer db
+  acid <- openLocalState $ DB M.empty
+  return $ ourCors $ serve userAPI $ apiServer acid
