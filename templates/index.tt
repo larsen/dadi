@@ -1,0 +1,29 @@
+<div class="row">
+  <div class="small-12 columns">
+    <table class="small-12">
+    [% FOREACH t IN ts %]
+       <tr>
+         <td><a href="/t/[% t.uuid_str %]">[% t.desc %]</a></td>
+         <td>[% t.recipient %]</td>
+         <td>
+           [% IF t.result == 1 %]
+             <span class="success radius label">Riuscito</span>
+           [% ELSE %]
+             [% IF t.result == 0 %]
+               <span class="alert radius label">Non riuscito</span>
+             [% END %]
+           [% END %]
+         </td>
+       </tr>
+    [% END %]
+    </table>
+  </div>
+</div>
+<div class="row">
+  <div class="small-12 columns">
+    <p>
+      <a href="/new" class="button expand">New</a>
+    </p>
+  </div>
+</div>
+

@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<!--[if IE 9]><html class="lt-ie10" lang="en" > <![endif]-->
+<html class="no-js" lang="en" >
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dice</title>
+
+  <link rel="stylesheet" href="/css/normalize.css">
+  <link rel="stylesheet" href="/css/foundation.min.css">
+
+  <script src="/javascripts/vendor/modernizr.js"></script>
+  <script src="/javascripts/vendor/jquery.js"></script>
+
+</head>
+<body>
+<div class="off-canvas-wrap" data-offcanvas>
+  <div class="inner-wrap">
+    <div class="sticky">
+    <nav class="tab-bar" data-topbar data-options="sticky_on: small">
+
+      <section class="left-small">
+        <a class="left-off-canvas-toggle menu-icon" href="#"><span></span></a>
+      </section>
+
+      <section class="middle tab-bar-section">
+        <h1 class="title">Dice gen</h1>
+      </section>
+
+      <section class="right-small">
+        <a href="#">Top</a>
+      </section>
+
+    </nav>
+    </div>
+
+    <aside class="left-off-canvas-menu">
+      <ul class="off-canvas-list" id="off-canvas-menu-list">
+        <li><label>Utils</label></li>
+        <li><a href="/">Rolls index</a></li>
+        <li><a href="/new">New roll</a></li>
+        <li><label>Adventure log</label></li>
+        <li><a href="/adv">Start</a></li>
+      </ul>
+    </aside>
+
+    <section class="main-section">
+      [% content %]
+    </section>
+
+    <a class="exit-off-canvas"></a>
+
+  </div>
+</div>
+
+  <script src="/javascripts/foundation.min.js"></script>
+  <script>
+    $(document).foundation({
+      abide: {
+        focus_on_invalid : true,
+        error_labels: true,
+        validators: {
+          abilityCheckP: function(el, required, parent) {
+            return el.value <= 100;
+	  }
+        }
+      }
+    });
+  </script>
+</body>
+</html>

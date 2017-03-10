@@ -1,0 +1,40 @@
+<div class="row">
+  <div class="small-12 columns">
+    <h1>Nuovo tiro</h1>
+  </div>
+</div>
+<form method="POST" data-abide>
+  <div class="row">
+    <div class="small-12 columns">
+      <label for="descr">Descrizione
+        <input id="descr" name="description" type="text" required placeholder="Description" />
+      </label>
+      <small class="error">Must be not-empty</small>
+    </div>
+  </div>
+  <div class="row">
+    <div class="small-12 columns">
+      <label>Probabilit&agrave;
+        <input name="p" type="text" data-abide-validator="abilityCheckP" required placeholder="(numeric, <= 100)" />
+      </label>
+      <small class="error">Must be numeric, <= 100.</small>
+    </div>
+  </div>
+  <div class="row">
+    <div class="small-12 columns">
+      <label>Destinatario:
+        <select name="recipient">
+        [% FOREACH r IN settings.recipients %]
+          <option value="[% r %]">[% r %]</option>
+        [% END %]
+        </select>
+      </label>
+      <small class="error">Must be numeric, <= 100.</small>
+    </div>
+  </div>
+  <div class="row">
+    <div class="small-12 columns">
+      <button type="submit" class="button expand">New</button>
+    </div>
+  </div>
+</form>
