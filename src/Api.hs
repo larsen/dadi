@@ -22,15 +22,17 @@ import qualified Data.UUID as UUID
 import Network.Wai
 import Network.Wai.Middleware.Cors
 
-
-
+import Eventful
+import Eventful.Store.Memory
 
 type PostCheckRoute = "check" :> "new"
   :> ReqBody '[JSON] NewCheckInput
   :> Post '[JSON] Check
 
-type GetCheckRoute  = "check" :> Capture "id" String :> Get '[JSON] (Maybe Check)
-type PutCheckRoute  = "check" :> Capture "id" String :> Put '[JSON] Check
+type CheckId = String
+
+type GetCheckRoute  = "check" :> Capture "id" CheckId :> Get '[JSON] (Maybe Check)
+type PutCheckRoute  = "check" :> Capture "id" CheckId :> Put '[JSON] Check
 type ListChecksRoute = "checks" :> Get '[JSON] [Check]
 
 type DadiAPI = PostCheckRoute
@@ -38,9 +40,11 @@ type DadiAPI = PostCheckRoute
           :<|> PutCheckRoute
           :<|> ListChecksRoute
 
+data CheckEvent =
+    NewCheck NewCheckInput
+  | ComputeCheck CheckId
 
-type DB = TVar Collection
-
+type DB = TVar (EventMap CheckEvent)
 
 insertCheck :: DB -> Check -> STM ()
 insertCheck db c = do
