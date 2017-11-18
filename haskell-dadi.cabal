@@ -28,6 +28,8 @@ library
                      , transformers
                      , wai-cors
                      , wai
+                     , eventful-core
+                     , eventful-memory
   default-language:    Haskell2010
 
 executable haskell-dadi-exe
