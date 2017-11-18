@@ -57,7 +57,7 @@ newCheck db (NewCheckInput { .. }) =
 
 
 
-checkNotFound :: ExceptT ServantErr IO a
+checkNotFound :: Handler a
 checkNotFound = throwError err404 { errBody = "No Check found" }
 
 getCheck :: DB -> Server GetCheckRoute

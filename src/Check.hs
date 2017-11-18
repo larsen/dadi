@@ -21,9 +21,6 @@ import Data.Aeson.Types
 type Description = String
 type Target = Int
 
-instance ToJSON UUID where
-  toJSON = toJSON . toString
-
 data Check = Check {
   hash :: UUID,
   description :: String,
